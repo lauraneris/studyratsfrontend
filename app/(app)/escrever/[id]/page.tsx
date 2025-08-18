@@ -3,9 +3,6 @@ import PromptDetails from "@/app/components/ui/PromptDetails";
 import { themes } from "@/app/data/themes";
 import { notFound } from 'next/navigation';
 
-// A interface customizada foi removida.
-
-// O tipo agora é definido diretamente aqui.
 const EscreverRedacaoPage = ({ params }: { params: { id: string } }) => {
     const theme = themes.find(t => t.id.toString() === params.id);
 
