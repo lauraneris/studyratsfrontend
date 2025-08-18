@@ -22,7 +22,7 @@ const HistoryPage = () => {
         const fetchHistory = async () => {
             const accessToken = localStorage.getItem('access_token');
             if (!accessToken) {
-                // Redirecionar para login no futuro
+
                 setLoading(false);
                 return;
             }
