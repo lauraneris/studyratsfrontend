@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { API_URL } from '@/lib/api';
 
 interface Correction {
     overall_score: number;
@@ -28,7 +29,7 @@ const HistoryPage = () => {
             }
 
             try {
-                const response = await fetch('http://localhost:8000/api/history/', {
+                const response = await fetch(`${API_URL}/api/history/`, {
                     headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
                 if (!response.ok) throw new Error('Falha ao buscar histórico.');

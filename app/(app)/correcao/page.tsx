@@ -8,6 +8,7 @@ import { FileText, Type, Camera, Mic } from "lucide-react";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ProfileIcon from '@/app/components/ui/ProfileIcon';
+import { API_URL } from '@/lib/api';
 
 const CorrecaoPage = () => {
     const docInputRef = useRef<HTMLInputElement>(null);
@@ -31,7 +32,7 @@ const CorrecaoPage = () => {
         formData.append('submitted_file', file);
 
         try {
-            const response = await fetch('http://localhost:8000/api/submissions/', {
+            const response = await fetch(`${API_URL}/api/submissions/`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${accessToken}` },
                 body: formData,

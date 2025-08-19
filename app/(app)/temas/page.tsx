@@ -5,6 +5,7 @@ import Header from "@/app/components/layout/Header";
 import FilterTag from "@/app/components/ui/FilterTag";
 import ThemeCard from "@/app/components/ui/ThemeCard";
 import Link from "next/link";
+import { API_URL } from '@/lib/api';
 
 interface Theme {
     id: number;
@@ -23,7 +24,7 @@ const TemasPage = () => {
     useEffect(() => {
         const fetchThemes = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/themes/');
+                const response = await fetch(`${API_URL}/api/themes/`);
                 if (!response.ok) throw new Error('Falha ao buscar temas.');
                 const data = await response.json();
                 setThemes(data);

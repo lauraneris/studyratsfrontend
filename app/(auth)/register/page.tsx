@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { API_URL } from '@/lib/api';
 
 const RegisterPage = () => {
     const [fullName, setFullName] = useState('');
@@ -15,24 +16,20 @@ const RegisterPage = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-
         try {
-            const response = await fetch('http://localhost:8000/api/register/', {
+            const response = await fetch(`${API_URL}/api/register/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ full_name: fullName, username, email, password }),
             });
-
             if (!response.ok) {
                 const data = await response.json();
                 const usernameError = data.username?.[0];
                 const fallback = 'Falha ao registrar.';
                 throw new Error(usernameError || fallback);
             }
-
             alert('Usuário registrado com sucesso! Você será redirecionado para o login.');
             router.push('/login');
-
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Ocorreu um erro.');
         }

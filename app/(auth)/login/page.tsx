@@ -3,33 +3,28 @@
 import { useState } from 'react';
 import { useAuth, AuthProvider } from '@/app/context/AuthContext';
 import Link from 'next/link';
+import { API_URL } from '@/lib/api';
 
 const LoginPageContent = () => {
-    // 1. Hooks devem ser declarados no topo do componente
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const { login } = useAuth();
 
-    // 2. A função handleSubmit é declarada apenas uma vez
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         try {
-            const response = await fetch('http://localhost:8000/api/token/', {
+            const response = await fetch(`${API_URL}/api/token/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),
             });
-
             if (!response.ok) {
                 throw new Error('Usuário ou senha inválidos.');
             }
-
             const data = await response.json();
-            // 3. Usamos a versão correta da função login, que também salva o username
             login(data, username);
-
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Ocorreu um erro.');
         }

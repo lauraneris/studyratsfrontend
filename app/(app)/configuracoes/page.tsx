@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { API_URL } from '@/lib/api';
 
 const ConfiguracoesPage = () => {
     const [oldPassword, setOldPassword] = useState('');
@@ -26,7 +27,7 @@ const ConfiguracoesPage = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:8000/api/change-password/', {
+            const response = await fetch(`${API_URL}/api/change-password/`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
