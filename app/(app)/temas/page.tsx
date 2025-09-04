@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import Header from "@/app/components/layout/Header";
 import FilterTag from "@/app/components/ui/FilterTag";
 import ThemeCard from "@/app/components/ui/ThemeCard";
-import Link from "next/link";
+import MascotIntro from '@/app/components/ui/MascotIntro';
+import { useAuth } from '@/app/context/AuthContext';
 import { API_URL } from '@/lib/api';
 
 interface Theme {
@@ -16,6 +16,7 @@ interface Theme {
 }
 
 const TemasPage = () => {
+    const { user } = useAuth();
     const [themes, setThemes] = useState<Theme[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -53,8 +54,10 @@ const TemasPage = () => {
 
     return (
         <div className="bg-gray-50 min-h-screen">
-            <Header />
-            <main className="px-8 pb-8">
+            <main className="p-8">
+
+                {user && <MascotIntro username={user.username} />}
+
                 <div className="flex items-center gap-3 mb-8">
                     {tags.map((tag) => (
                         <FilterTag
@@ -66,22 +69,23 @@ const TemasPage = () => {
                     ))}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {loading ? (
-                        <p>Carregando temas...</p>
+                        <p className="col-span-full text-center text-gray-500">Carregando temas...</p>
                     ) : (
                         filteredThemes.length > 0 ? (
                             filteredThemes.map((theme) => (
-                                <Link href={`/escrever/${theme.id}`} key={theme.id}>
-                                    <ThemeCard
-                                        imageUrl={theme.image_url || "/imagens/theme-autismo.jpg"}
-                                        title={theme.title}
-                                        status={theme.status || 'pending'}
-                                    />
-                                </Link>
+
+                                <ThemeCard
+                                    key={theme.id}
+                                    id={theme.id}
+                                    imageUrl={theme.image_url || "/imagens/theme-autismo.jpg"}
+                                    title={theme.title}
+                                    status={theme.status || 'pending'}
+                                />
                             ))
                         ) : (
-                            <p className="col-span-4 text-center text-gray-500">Nenhum tema encontrado com os filtros selecionados.</p>
+                            <p className="col-span-full text-center text-gray-500">Nenhum tema encontrado.</p>
                         )
                     )}
                 </div>
