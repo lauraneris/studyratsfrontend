@@ -1,10 +1,14 @@
+// app/(app)/escrever/[id]/page.tsx
 import ActionPanel from "@/app/components/ui/ActionPanel";
 import PromptDetails from "@/app/components/ui/PromptDetails";
 import { themes } from "@/app/data/themes";
-import { notFound } from 'next/navigation';
+import { notFound } from "next/navigation";
 
-const EscreverRedacaoPage = ({ params }: { params: { id: string } }) => {
-    const theme = themes.find(t => t.id.toString() === params.id);
+export default async function EscreverRedacaoPage(
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const { id } = await params; // Next 15 entrega params como Promise
+    const theme = themes.find((t) => t.id.toString() === id);
 
     if (!theme) {
         notFound();
@@ -27,6 +31,4 @@ const EscreverRedacaoPage = ({ params }: { params: { id: string } }) => {
             </div>
         </div>
     );
-};
-
-export default EscreverRedacaoPage;
+}
