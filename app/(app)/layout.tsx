@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/app/components/layout/Sidebar';
-import { AuthProvider } from '@/app/context/AuthContext';
+import Header from '@/app/components/layout/Header';
+import TemasHeader from '@/app/components/layout/TemasHeader';
 
 export default function AppLayout({
   children,
@@ -27,13 +28,18 @@ export default function AppLayout({
   }
 
   return (
-    <AuthProvider>
-      <div className="flex h-screen">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto bg-gray-50">
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+
+      <div className="flex flex-1 flex-col overflow-hidden">
+
+        {pathname === '/temas' ? <TemasHeader /> : <Header />}
+
+
+        <main className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>
-    </AuthProvider>
+    </div>
   );
 }

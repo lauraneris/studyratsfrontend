@@ -24,7 +24,7 @@ const CriteriaCard = ({ criteriaNumber, score, maxScore, content, isPerfect }: C
                     Critério {String(criteriaNumber).padStart(2, '0')} ({score}/{maxScore})
                 </span>
                 <div className="flex items-center gap-2">
-                    {isPerfect && <Check className="text-green-500" size={20} />}
+                    {isPerfect && <Check className="text-brand-green" size={20} />}
                     {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                 </div>
             </button>

@@ -1,38 +1,27 @@
 "use client";
-import React from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 
-type MascotIntroProps = {
-    username?: string;
-};
+type Props = { username?: string | null; message: string; bubbleColorClass?: string };
 
-export default function MascotIntro({ username }: MascotIntroProps) {
-    const name = username?.trim() || "estudante";
-
+export default function MascotIntro({ username, message, bubbleColorClass = "bg-brand-blue" }: Props) {
+    const formattedMessage = message.replace("{name}", username || "aluno(a)");
     return (
-        <div className="flex justify-start items-center my-12">
-            <div className="relative flex-shrink-0">
-                <Image
-                    src="/imagens/stuartnerd.png"
-                    alt="Mascote RedaBot"
-                    width={150}
-                    height={150}
-                />
-            </div>
-            <div className="relative ml-[-15px]">
-                <div className="bg-blue-500 text-white p-4 rounded-xl shadow-lg">
-                    <p className="font-semibold text-base">
-                        Olá, {name}! 👋 Eu sou o RedaBot, seu corretor inteligente. Escolha
-                        uma opção para me enviar o texto.
-                    </p>
-                </div>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex items-end gap-3">
+            <Image src="/imagens/stuart.png" alt="Mascote Stuart" width={88} height={88} className="shrink-0 drop-shadow-md" />
+            <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 220, damping: 20, delay: 0.2 }}
+                className={`relative p-3 rounded-2xl shadow-md text-white text-sm max-w-xs ${bubbleColorClass}`}
+                style={{ filter: "drop-shadow(0 4px 6px rgba(0,0,0,.1))" }}
+            >
+                {formattedMessage}
                 <div
-                    className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-0 h-0
-          border-t-[10px] border-t-transparent
-          border-r-[15px] border-r-blue-500
-          border-b-[10px] border-b-transparent"
+                    className={`absolute bottom-0 right-1/2 -mr-2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[10px] ${bubbleColorClass}`}
+                    style={{ transform: "translateY(100%)", bottom: "-10px", right: "20px", left: "auto" }}
                 />
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 }

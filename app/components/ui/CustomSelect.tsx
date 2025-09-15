@@ -9,7 +9,7 @@ const CustomSelect = ({ label, options }: CustomSelectProps) => {
     return (
         <div className="relative w-full">
             <select
-                className="w-full appearance-none bg-white border-2 border-gray-300 rounded-lg px-4 py-3 text-gray-700 font-semibold focus:outline-none focus:border-cyan-500 cursor-pointer"
+                className="w-full appearance-none bg-white border-2 border-gray-300 rounded-lg px-4 py-3 text-gray-700 font-semibold focus:outline-none focus:border-brand-blue cursor-pointer"
                 defaultValue=""
             >
                 <option value="" disabled>{label}</option>

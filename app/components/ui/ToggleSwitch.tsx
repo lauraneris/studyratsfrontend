@@ -16,7 +16,7 @@ const ToggleSwitch = ({ label }: ToggleSwitchProps) => {
             </label>
             <div
                 onClick={() => setIsEnabled(!isEnabled)}
-                className={`relative inline-flex items-center h-6 rounded-full w-11 cursor-pointer transition-colors ${isEnabled ? 'bg-cyan-600' : 'bg-gray-300'
+                className={`relative inline-flex items-center h-6 rounded-full w-11 cursor-pointer transition-colors ${isEnabled ? 'bg-brand-blue' : 'bg-gray-300'
                     }`}
             >
                 <span

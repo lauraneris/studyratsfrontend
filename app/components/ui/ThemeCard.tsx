@@ -10,7 +10,6 @@ interface ThemeCardProps {
 }
 
 const ThemeCard = ({ id, imageUrl, title, status }: ThemeCardProps) => {
-    // link de destino com base no status do tema
     const destinationUrl = status === 'pending' ? `/escrever/${id}` : `/historico/${id}`;
 
     return (
@@ -32,8 +31,9 @@ const ThemeCard = ({ id, imageUrl, title, status }: ThemeCardProps) => {
 
                     <h3 className="font-black text-gray-800 mb-2 flex-grow text-lg">{title}</h3>
 
+                    {/* INÍCIO DA ALTERAÇÃO */}
                     {status === 'pending' ? (
-                        <div className="flex items-center justify-between text-brand-blue font-bold group-hover:underline mt-auto">
+                        <div className="flex items-center justify-between text-brand-green font-black group-hover:underline mt-auto">
                             <span>Escrever Redação</span>
                             <ArrowRight size={20} />
                         </div>
@@ -43,6 +43,7 @@ const ThemeCard = ({ id, imageUrl, title, status }: ThemeCardProps) => {
                             <Check size={20} />
                         </div>
                     )}
+                    {/* FIM DA ALTERAÇÃO */}
                 </div>
             </div>
         </Link>

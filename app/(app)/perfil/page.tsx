@@ -62,7 +62,7 @@ const PerfilPage = () => {
 
     return (
         <div className="p-8">
-            <h1 className="text-4xl font-bold text-gray-800">Meu Perfil</h1>
+            <h1 className="text-4xl font-black text-brand-pink">Meu Perfil</h1>
             <p className="text-lg text-gray-600 mt-1">Bem-vindo(a) de volta, {user?.username || 'Aluno(a)'}!</p>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">

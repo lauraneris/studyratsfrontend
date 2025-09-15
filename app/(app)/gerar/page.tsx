@@ -1,9 +1,26 @@
 "use client";
 
 import { useState } from 'react';
+import { motion, Variants } from 'framer-motion';
 import CustomSelect from '../../components/ui/CustomSelect';
 import DifficultySlider from '../../components/ui/DifficultySlider';
 import GeneratedProposal from '../../components/ui/GeneratedProposal';
+import MascotIntro from '@/app/components/ui/MascotIntro';
+import { useAuth } from '@/app/context/AuthContext';
+
+// Variantes de animação (podemos futuramente mover para um arquivo compartilhado)
+const titleContainerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.08, delayChildren: 0.2 }
+    }
+};
+
+const letterVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100 } }
+};
 
 const mockData = {
     title: "A necessidade de discussão a cerca do autismo no Brasil",
@@ -12,6 +29,8 @@ const mockData = {
 
 const GerarPage = () => {
     const [proposal, setProposal] = useState<{ title: string; text: string; } | null>(null);
+    const { user } = useAuth();
+    const title = "Gerar Proposta Personalizada";
 
     const handleGenerate = () => {
         setProposal(mockData);
@@ -19,31 +38,59 @@ const GerarPage = () => {
 
     return (
         <div className="bg-gray-50 min-h-screen p-8">
-            <header className="mb-10 max-w-7xl mx-auto">
+            <header className="text-center mb-8">
                 <p className="text-sm text-gray-500">Início / Gerar</p>
-                <h1 className="text-4xl font-bold text-gray-800">Gerar proposta personalizada</h1>
+                <motion.h1
+                    className="text-4xl md:text-5xl font-black text-brand-pink mt-2"
+                    variants={titleContainerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    aria-label={title}
+                >
+                    {title.split("").map((char, index) => (
+                        <motion.span key={index} variants={letterVariants} style={{ display: 'inline-block' }}>
+                            {char === " " ? "\u00A0" : char}
+                        </motion.span>
+                    ))}
+                </motion.h1>
             </header>
 
-            <main className="grid grid-cols-1 lg:grid-cols-2 max-w-7xl mx-auto gap-12">
-                <div className="flex flex-col gap-6 p-8 bg-white rounded-2xl border-2 border-gray-200 h-fit">
+            <div className="my-10">
+                <MascotIntro
+                    username={user?.username}
+                    message="Vamos criar uma proposta de redação perfeita para você, {name}!"
+                />
+            </div>
+
+            <main className="grid grid-cols-1 lg:grid-cols-2 max-w-7xl mx-auto gap-12 items-start">
+                <motion.div
+                    className="flex flex-col gap-6 p-8 bg-white rounded-2xl border-2 border-gray-200 h-fit"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                >
                     <CustomSelect label="Tema da Redação" options={['Saúde', 'Educação', 'Segurança']} />
                     <CustomSelect label="Prova ou instituição" options={['ENEM', 'UFPR', 'PUCPR', 'Outro']} />
                     <CustomSelect label="Qual habilidade deseja treinar" options={['Coesão', 'Coerência', 'Competência 1 (ENEM)']} />
                     <DifficultySlider />
-                    <button onClick={handleGenerate} className="w-full mt-4 bg-cyan-600 text-white font-bold py-3 rounded-lg hover:bg-cyan-700 transition-colors">
+                    <button onClick={handleGenerate} className="w-full mt-4 bg-brand-blue text-white font-bold py-3 rounded-lg hover:brightness-110 transition-colors">
                         Gerar proposta
                     </button>
-                </div>
+                </motion.div>
 
-                <div>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.5 }}
+                >
                     {proposal ? (
                         <GeneratedProposal title={proposal.title} text={proposal.text} />
                     ) : (
-                        <div className="flex items-center justify-center bg-white p-8 rounded-2xl border-2 border-dashed border-gray-300 h-full">
-                            <p className="text-gray-500 text-center">Sua proposta personalizada aparecerá aqui após você preencher os campos e clicar em "Gerar proposta".</p>
+                        <div className="flex items-center justify-center bg-white p-8 rounded-2xl border-2 border-dashed border-gray-300 h-full min-h-[400px]">
+                            <p className="text-gray-500 text-center">Sua proposta personalizada aparecerá aqui!</p>
                         </div>
                     )}
-                </div>
+                </motion.div>
             </main>
         </div>
     );

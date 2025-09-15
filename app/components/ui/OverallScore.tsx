@@ -7,7 +7,7 @@ const OverallScore = ({ score }: OverallScoreProps) => {
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
             <div className="flex justify-between items-center">
                 <span className="font-semibold text-gray-700">Nota geral</span>
-                <span className="text-3xl font-bold text-blue-600">{score}</span>
+                <span className="text-3xl font-bold text-brand-blue">{score}</span>
             </div>
         </div>
     );
