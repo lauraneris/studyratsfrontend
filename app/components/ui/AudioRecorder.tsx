@@ -1,98 +1,110 @@
-"use client";
+'use client';
 
 import { useState, useRef } from 'react';
-import { Mic, StopCircle, Send, X, AudioLines } from 'lucide-react';
+import { Mic, StopCircle, Play, Trash2 } from 'lucide-react';
 
 interface AudioRecorderProps {
-    onSend: (audioBlob: Blob) => void;
-    onClose: () => void;
+    onRecordingComplete: (audioFile: File) => void;
 }
 
-const AudioRecorder = ({ onSend, onClose }: AudioRecorderProps) => {
+export default function AudioRecorder({ onRecordingComplete }: AudioRecorderProps) {
     const [permission, setPermission] = useState(false);
-    const [isRecording, setIsRecording] = useState(false);
-    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const audioChunksRef = useRef<Blob[]>([]);
+    const [stream, setStream] = useState<MediaStream | null>(null);
+    const [recordingStatus, setRecordingStatus] = useState<'inactive' | 'recording'>('inactive');
+    const [audio, setAudio] = useState<string | null>(null);
+    const mediaRecorder = useRef<MediaRecorder | null>(null);
+    const audioChunks = useRef<Blob[]>([]);
 
     const getMicrophonePermission = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            setPermission(true);
-            return stream;
-        } catch (err) {
-            alert("Permissão para o microfone negada.");
-            return null;
+        if ('MediaRecorder' in window) {
+            try {
+                const streamData = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                setPermission(true);
+                setStream(streamData);
+            } catch (err: any) {
+                alert(err.message);
+            }
+        } else {
+            alert('A API MediaRecorder não é suportada no seu navegador.');
         }
     };
 
     const startRecording = async () => {
-        const stream = await getMicrophonePermission();
-        if (stream) {
-            setIsRecording(true);
-            setAudioBlob(null);
-            audioChunksRef.current = [];
-            const mediaRecorder = new MediaRecorder(stream);
-            mediaRecorderRef.current = mediaRecorder;
-            mediaRecorder.ondataavailable = (event) => {
-                audioChunksRef.current.push(event.data);
-            };
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                setAudioBlob(blob);
-            };
-            mediaRecorder.start();
+        if (!permission || !stream) {
+            await getMicrophonePermission();
+            return; // A permissão será pedida, o utilizador clica novamente
         }
+
+        setRecordingStatus('recording');
+        const media = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorder.current = media;
+        mediaRecorder.current.start();
+
+        audioChunks.current = [];
+        mediaRecorder.current.ondataavailable = (event) => {
+            if (typeof event.data === 'undefined') return;
+            if (event.data.size === 0) return;
+            audioChunks.current.push(event.data);
+        };
     };
 
     const stopRecording = () => {
-        if (mediaRecorderRef.current) {
-            mediaRecorderRef.current.stop();
-            setIsRecording(false);
+        if (mediaRecorder.current) {
+            setRecordingStatus('inactive');
+            mediaRecorder.current.stop();
+            mediaRecorder.current.onstop = () => {
+                const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                setAudio(audioUrl);
+
+                // Converte o Blob para um File e envia para o componente pai
+                const audioFile = new File([audioBlob], `gravacao-${Date.now()}.webm`, { type: 'audio/webm' });
+                onRecordingComplete(audioFile);
+
+                audioChunks.current = [];
+            };
         }
     };
 
-    const handleSend = () => {
-        if (audioBlob) {
-            onSend(audioBlob);
-        }
-    };
+    const resetRecording = () => {
+        setAudio(null);
+        onRecordingComplete(null as any); // Informa o pai que o áudio foi removido
+    }
 
     return (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md relative">
-                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
-                    <X size={24} />
-                </button>
-                <div className="text-center">
-                    <h2 className="text-2xl font-bold mb-4">Gravador de Áudio</h2>
-                    {!isRecording && !audioBlob && (
-                        <button onClick={startRecording} className="bg-red-500 text-white p-6 rounded-full hover:bg-red-600 transition-colors">
-                            <Mic size={40} />
+        <div className="border-4 border-dashed border-brand-black p-8 text-center bg-gray-50">
+            {!audio && (
+                <>
+                    <Mic className={`w-12 h-12 mx-auto mb-4 ${recordingStatus === 'recording' ? 'text-red-500 animate-pulse' : 'text-gray-400'}`} />
+
+                    {!permission ? (
+                        <button onClick={getMicrophonePermission} className="bg-brand-blue text-white px-6 py-3 neo-button font-black">
+                            PERMITIR MICROFONE
+                        </button>
+                    ) : recordingStatus === 'inactive' ? (
+                        <button onClick={startRecording} className="bg-brand-green text-white px-6 py-3 neo-button font-black">
+                            INICIAR GRAVAÇÃO
+                        </button>
+                    ) : (
+                        <button onClick={stopRecording} className="bg-red-500 text-white px-6 py-3 neo-button font-black">
+                            PARAR GRAVAÇÃO
                         </button>
                     )}
-                    {isRecording && (
-                        <>
-                            <button onClick={stopRecording} className="bg-gray-700 text-white p-6 rounded-full hover:bg-gray-800 transition-colors">
-                                <StopCircle size={40} />
-                            </button>
-                            <p className="text-gray-500 mt-4 animate-pulse">Gravando...</p>
-                        </>
-                    )}
-                    {audioBlob && !isRecording && (
-                        <div className="flex flex-col items-center gap-4">
-                            <AudioLines size={40} className="text-green-500" />
-                            <p className="font-semibold text-green-600">Gravação Concluída</p>
-                            <button onClick={handleSend} className="w-full flex items-center justify-center gap-2 mt-4 px-8 py-3 bg-cyan-600 text-white font-bold rounded-lg hover:bg-cyan-700">
-                                <Send size={20} />
-                                Enviar Áudio
-                            </button>
-                        </div>
-                    )}
+                    <p className="mt-4 text-gray-600 font-regular">
+                        {recordingStatus === 'recording' ? 'Gravando...' : 'Clique para iniciar a gravação de áudio.'}
+                    </p>
+                </>
+            )}
+
+            {audio && (
+                <div className="flex flex-col items-center gap-4">
+                    <audio src={audio} controls className="w-full"></audio>
+                    <button onClick={resetRecording} className="bg-brand-pink text-white px-6 py-3 neo-button font-black flex items-center gap-2">
+                        <Trash2 className="w-5 h-5" />
+                        GRAVAR NOVAMENTE
+                    </button>
                 </div>
-            </div>
+            )}
         </div>
     );
-};
-
-export default AudioRecorder;
+}

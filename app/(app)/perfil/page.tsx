@@ -1,102 +1,167 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useMemo, FormEvent } from 'react';
 import { useAuth } from '@/app/context/AuthContext';
-import Link from 'next/link';
-import { BookCheck, Target, Award } from 'lucide-react';
+import { API_URL } from '@/lib/api';
+import { Award, TrendingUp, KeyRound, UserCircle, LogOut } from 'lucide-react';
+import { api } from '@/lib/api';
 
-interface Correction {
-    overall_score: number;
-}
 
 interface Submission {
     id: number;
     submission_date: string;
-    status: string;
-    correction: Correction | null;
+    status: 'pending' | 'processing' | 'completed' | 'error';
+    correction: { overall_score: number } | null;
 }
 
-const StatCard = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number }) => (
-    <div className="bg-white p-6 rounded-lg shadow-sm border flex items-center gap-4">
-        <div className="bg-blue-100 text-blue-600 p-3 rounded-lg">
-            {icon}
-        </div>
-        <div>
-            <p className="text-gray-500 text-sm font-medium">{label}</p>
-            <p className="text-2xl font-bold text-gray-800">{value}</p>
-        </div>
-    </div>
-);
+const ChangePasswordForm = () => {
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [message, setMessage] = useState('');
+    const [isError, setIsError] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-const PerfilPage = () => {
-    const { user } = useAuth();
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        if (newPassword !== confirmPassword) {
+            setMessage('As novas palavras-passe não coincidem.');
+            setIsError(true);
+            return;
+        }
+        setIsLoading(true);
+        setMessage('');
+        try {
+            await api.put('/change-password/', {
+                old_password: oldPassword,
+                new_password: newPassword,
+            });
+            setMessage('Palavra-passe alterada com sucesso!');
+            setIsError(false);
+            setOldPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (error: any) {
+            setMessage(error.response?.data?.old_password?.[0] || 'Ocorreu um erro ao alterar a palavra-passe.');
+            setIsError(true);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+                <label className="font-black text-brand-black">Palavra-passe Atual</label>
+                <input type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} required className="mt-1 w-full border-3 border-brand-black h-12 px-4 font-sans" />
+            </div>
+            <div>
+                <label className="font-black text-brand-black">Nova Palavra-passe</label>
+                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required className="mt-1 w-full border-3 border-brand-black h-12 px-4 font-sans" />
+            </div>
+            <div>
+                <label className="font-black text-brand-black">Confirmar Nova Palavra-passe</label>
+                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="mt-1 w-full border-3 border-brand-black h-12 px-4 font-sans" />
+            </div>
+            {message && <p className={`text-sm font-bold ${isError ? 'text-red-600' : 'text-green-600'}`}>{message}</p>}
+            <button type="submit" disabled={isLoading} className="w-full bg-brand-pink text-white neo-button font-black text-lg py-3 hover:bg-brand-blue disabled:opacity-50">
+                {isLoading ? 'A alterar...' : 'Alterar Palavra-passe'}
+            </button>
+        </form>
+    );
+};
+
+
+export default function PerfilPage() {
+    const { user, logout } = useAuth();
     const [submissions, setSubmissions] = useState<Submission[]>([]);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchHistory = async () => {
-            const accessToken = localStorage.getItem('access_token');
-            if (!accessToken) return;
-
             try {
-                const response = await fetch('http://localhost:8000/api/history/', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                if (!response.ok) throw new Error('Falha ao buscar histórico.');
-                const data = await response.json();
-                setSubmissions(data);
+                const response = await api.get('/history/');
+                setSubmissions(response.data);
             } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
+                console.error("Erro ao carregar histórico:", error);
             }
         };
         fetchHistory();
     }, []);
 
-    const totalSubmissions = submissions.length;
-    const completedSubmissions = submissions.filter(s => s.status === 'completed' && s.correction);
-    const averageScore = completedSubmissions.length > 0
-        ? Math.round(completedSubmissions.reduce((acc, sub) => acc + (sub.correction?.overall_score || 0), 0) / completedSubmissions.length)
-        : 0;
+    const stats = useMemo(() => {
+        const completed = submissions.filter(s => s.status === 'completed' && s.correction);
+        const scores = completed.map(s => s.correction!.overall_score);
+        const media = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+        return { total: submissions.length, media };
+    }, [submissions]);
 
     return (
-        <div className="p-8">
-            <h1 className="text-4xl font-black text-brand-pink">Meu Perfil</h1>
-            <p className="text-lg text-gray-600 mt-1">Bem-vindo(a) de volta, {user?.username || 'Aluno(a)'}!</p>
+        <div className="grid lg:grid-cols-3 gap-8">
+            {/* Coluna Principal: Informações e Ações */}
+            <div className="lg:col-span-2 space-y-8">
+                <div className="bg-white neo-card p-6 flex items-center gap-4">
+                    <UserCircle className="w-16 h-16 text-brand-blue" />
+                    <div>
+                        <h2 className="text-3xl font-black">{user?.username}</h2>
+                        <p className="font-sans text-gray-600">{user?.email}</p>
+                    </div>
+                </div>
 
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatCard icon={<BookCheck size={24} />} label="Redações Enviadas" value={totalSubmissions} />
-                <StatCard icon={<Target size={24} />} label="Nota Média" value={averageScore} />
-                <StatCard icon={<Award size={24} />} label="Redações Concluídas" value={completedSubmissions.length} />
+                <div className="bg-white neo-card">
+                    <div className="p-6 border-b-4 border-brand-black">
+                        <h2 className="text-2xl font-black flex items-center gap-2">
+                            <KeyRound className="w-6 h-6 text-brand-pink" />
+                            Segurança da Conta
+                        </h2>
+                    </div>
+                    <div className="p-6">
+                        <ChangePasswordForm />
+                    </div>
+                </div>
+                <button onClick={logout} className="w-full bg-red-500 text-white neo-button font-black text-lg py-4 hover:bg-red-600 flex items-center justify-center gap-2">
+                    <LogOut className="w-5 h-5" />
+                    Terminar Sessão
+                </button>
             </div>
 
-            <div className="mt-10">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">Atividade Recente</h2>
-                <div className="bg-white p-4 rounded-lg shadow-sm border">
-                    {loading ? (
-                        <p>Carregando...</p>
-                    ) : submissions.length > 0 ? (
-                        <ul className="divide-y divide-gray-200">
-                            {submissions.slice(0, 5).map(sub => (
-                                <li key={sub.id} className="py-3">
-                                    <Link href={`/historico/${sub.id}`} className="flex justify-between items-center group">
-                                        <div>
-                                            <p className="font-semibold group-hover:text-blue-600">Redação enviada em {new Date(sub.submission_date).toLocaleDateString('pt-BR')}</p>
-                                            <p className="text-sm text-gray-500">{sub.status}</p>
-                                        </div>
-                                        <span className="font-bold text-lg text-gray-800">{sub.correction?.overall_score ?? '--'}</span>
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="text-gray-500">Nenhuma atividade recente.</p>
-                    )}
+            {/* Coluna Lateral: Estatísticas e Atividade */}
+            <div className="lg:col-span-1 space-y-8">
+                <div className="bg-white neo-card">
+                    <div className="p-4 border-b-4 border-brand-black">
+                        <h3 className="text-xl font-black flex items-center gap-2">
+                            <Award className="w-5 h-5 text-yellow-500" />
+                            Estatísticas
+                        </h3>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        <div className="flex justify-between items-center bg-gray-50 p-3 border-2 border-brand-black">
+                            <span className="font-black">Total de Redações</span>
+                            <span className="font-black text-2xl text-brand-blue">{stats.total}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-gray-50 p-3 border-2 border-brand-black">
+                            <span className="font-black">Nota Média</span>
+                            <span className="font-black text-2xl text-brand-green">{stats.media.toFixed(0)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white neo-card">
+                    <div className="p-4 border-b-4 border-brand-black">
+                        <h3 className="text-xl font-black flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-brand-green" />
+                            Atividade Recente
+                        </h3>
+                    </div>
+                    <div className="p-4 space-y-2">
+                        {submissions.slice(0, 5).map(sub => (
+                            <div key={sub.id} className="text-sm p-2 border-b border-gray-200">
+                                <span className="font-black">Redação enviada:</span>
+                                <span className="font-sans ml-2 text-gray-600">{new Date(sub.submission_date).toLocaleString('pt-BR')}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
     );
-};
-
-export default PerfilPage;
+}

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import Link from "next/link";
 import { motion, Variants } from "framer-motion";
 import { Search, Plus } from "lucide-react";

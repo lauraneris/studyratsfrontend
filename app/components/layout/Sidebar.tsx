@@ -1,92 +1,96 @@
-"use client";
+'use client';
 
-import { useState } from 'react';
-import { useAuth } from '@/app/context/AuthContext';
-import { BookOpen, Send, ClipboardCheck, Wand2, ClipboardList, ChevronsLeft, ChevronsRight, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
+import {
+    Home, FileText, PlusCircle, BookOpen, History,
+    ChevronLeft, ChevronRight, Users, FileEdit, CheckSquare
+} from 'lucide-react';
+import { useAuth } from '@/app/context/AuthContext';
 
-const navItems = [
-    { href: "/temas", icon: <BookOpen size={24} />, label: "Temas" },
-    { href: "/correcao", icon: <Send size={24} />, label: "Corrigir Redação" },
-    { href: "/historico", icon: <ClipboardCheck size={24} />, label: "Meu Histórico" },
-    { href: "/gerar", icon: <Wand2 size={24} />, label: "Gerar Proposta" },
-    { href: "/simulado", icon: <ClipboardList size={24} />, label: "Simulados" },
+const studentNavItems = [
+    { name: 'Temas', icon: Home, path: '/temas' },
+    { name: 'Correção', icon: FileText, path: '/correcao' },
+    { name: 'Gerar', icon: PlusCircle, path: '/gerar' },
+    { name: 'Simulado', icon: BookOpen, path: '/simulado' },
+    { name: 'Histórico', icon: History, path: '/historico' },
 ];
 
-const Sidebar = () => {
-    const [isExpanded, setIsExpanded] = useState(true);
+
+const professorNavItems = [
+    { name: 'Dashboard', icon: Home, path: '/dashboard-professor' },
+    { name: 'Alunos', icon: Users, path: '/gerenciar-alunos' },
+    { name: 'Criar Conteúdo', icon: FileEdit, path: '/criar-conteudo' },
+    { name: 'Correções', icon: CheckSquare, path: '/correcoes' },
+];
+
+export default function Sidebar() {
+    const [isCollapsed, setIsCollapsed] = useState(false);
     const pathname = usePathname();
-    const { logout } = useAuth();
+    const { user } = useAuth();
+
+    // ATUALIZADO: Lógica para escolher o menu correto
+    const isProfessor = user?.profile?.role === 'teacher';
+    const navItems = isProfessor ? professorNavItems : studentNavItems;
+    const homePath = isProfessor ? '/dashboard-professor' : '/temas';
 
     return (
-        <aside className={`h-screen bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-72' : 'w-24'}`}>
-
-            {/* INÍCIO DA ALTERAÇÃO */}
-            <div className="p-6 flex justify-center items-center h-[120px]">
-                {isExpanded ? (
-                    <Image
-                        src="/imagens/logo.png"
-                        alt="Logo Study Rats"
-                        width={200} // Aumentado para maior destaque
-                        height={139}
-                        priority
-                    />
-                ) : (
-                    <Image
-                        src="/imagens/stuart.png"
-                        alt="Mascote Study Rats"
-                        width={80}
-                        height={80}
-                        priority
-                    />
+        <div
+            className={`bg-white neo-card rounded-none border-r-4 border-brand-black transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'
+                } flex flex-col sticky top-0 h-screen`}
+        >
+            <div className="p-4 border-b-4 border-brand-black flex items-center justify-between h-20">
+                {!isCollapsed && (
+                    <Link href={homePath} className="flex items-center gap-3">
+                        <Image
+                            src="/imagens/logo.png"
+                            alt="Study Rats Logo"
+                            width={140}
+                            height={40}
+                            priority
+                        />
+                    </Link>
                 )}
+                <button
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="neo-button p-2 bg-brand-blue text-white hover:bg-brand-pink"
+                >
+                    {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                </button>
             </div>
 
-            {/* Aumentado o espaçamento entre os itens (gap-y-4) e o padding superior (pt-8) */}
-            <nav className="flex-grow px-4 pt-8">
-                <ul className="flex flex-col gap-y-4">
-                    {navItems.map((item) => {
-                        const isActive = pathname.startsWith(item.href);
-                        return (
-                            <li key={item.href}>
-                                <Link
-                                    href={item.href}
-                                    className={`flex items-center p-3 rounded-lg transition-colors font-semibold ${isActive
-                                        ? 'bg-brand-pink/10 text-brand-pink'
-                                        : 'text-gray-600 hover:bg-brand-pink/10 hover:text-brand-pink'
-                                        } ${!isExpanded ? 'justify-center' : ''}`}
-                                    title={isExpanded ? '' : item.label}
-                                >
-                                    {item.icon}
-                                    {isExpanded && <span className="ml-4 font-semibold">{item.label}</span>}
-                                </Link>
-                            </li>
-                        );
-                    })}
-                </ul>
+            <nav className="flex-1 p-4 space-y-2">
+                {navItems.map((item) => (
+                    <Link
+                        key={item.name}
+                        href={item.path}
+                        className={`flex items-center gap-3 p-3 neo-button font-black text-sm transition-all w-full ${pathname.startsWith(item.path)
+                                ? 'bg-brand-pink text-white'
+                                : 'bg-white text-brand-black hover:bg-brand-blue hover:text-white'
+                            }`}
+                    >
+                        <item.icon className="w-5 h-5" />
+                        {!isCollapsed && <span>{item.name.toUpperCase()}</span>}
+                    </Link>
+                ))}
             </nav>
-            {/* FIM DA ALTERAÇÃO */}
 
-            <div className="border-t border-gray-200 p-4 mt-auto">
-                <button
-                    onClick={logout}
-                    className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-brand-pink/10 hover:text-brand-pink w-full mb-2"
-                >
-                    <LogOut size={24} />
-                    {isExpanded && <span className="ml-4 font-semibold">Sair</span>}
-                </button>
-                <button
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 w-full"
-                >
-                    {isExpanded ? <ChevronsLeft size={24} /> : <ChevronsRight size={24} />}
-                    {isExpanded && <span className="ml-4 font-semibold">Recolher</span>}
-                </button>
-            </div>
-        </aside>
+            {/* Saldo de StuartCoins (apenas para alunos) */}
+            {!isCollapsed && !isProfessor && (
+                <div className="p-4 border-t-4 border-brand-black">
+                    <div className="bg-brand-green text-white p-3 neo-button font-black text-center flex items-center justify-center gap-2">
+                        <Image
+                            src="/imagens/stuartcoin.png"
+                            alt="StuartCoin"
+                            width={24}
+                            height={24}
+                        />
+                        <span>{user?.profile?.stuart_coins_balance ?? '...'}</span>
+                    </div>
+                </div>
+            )}
+        </div>
     );
-};
-
-export default Sidebar;
+}

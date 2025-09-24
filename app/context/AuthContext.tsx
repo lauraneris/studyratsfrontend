@@ -1,64 +1,110 @@
-"use client";
+'use client';
 
-import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
 
-interface User {
-    username: string;
-    stuartCoins?: number;
+interface UserProfile {
+    role: 'student' | 'teacher' | 'admin';
+    stuart_coins_balance: number;
 }
-
+interface User {
+    id: number;
+    username: string;
+    email: string;
+    profile: UserProfile;
+}
+interface LoginData {
+    username: string;
+    password: string;
+}
 interface AuthContextType {
     user: User | null;
-    login: (tokens: { access: string; refresh: string }, username: string) => void;
+    isLoading: boolean;
+    login: (data: LoginData) => Promise<void>;
     logout: () => void;
-    deductCoins: (amount: number) => void; // 1. Adicionar a nova função
+    setUser: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
-        const token = localStorage.getItem('access_token');
-        const username = localStorage.getItem('username');
-        if (token && username) {
-            setUser({ username, stuartCoins: 1250 });
-        }
+        const checkAuthStatus = async () => {
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+                api.defaults.headers['Authorization'] = `Bearer ${token}`;
+                try {
+                    const userResponse = await api.get('/profile/me/');
+
+                    // SIMULAÇÃO DE ROLE PARA TESTES
+                    const userData = {
+                        ...userResponse.data,
+                        profile: userResponse.data.profile || { role: 'student', stuart_coins_balance: 0 }
+                    };
+                    // Para testar como professor, descomente a linha abaixo:
+                    // userData.profile.role = 'teacher';
+
+                    setUser(userData);
+                } catch (error) {
+                    logout();
+                }
+            }
+            setIsLoading(false);
+        };
+        checkAuthStatus();
     }, []);
 
-    const login = (tokens: { access: string; refresh: string }, username: string) => {
-        localStorage.setItem('access_token', tokens.access);
-        localStorage.setItem('refresh_token', tokens.refresh);
-        localStorage.setItem('username', username);
-        setUser({ username, stuartCoins: 1250 });
-        router.push('/temas');
+    const login = async (data: LoginData) => {
+        setIsLoading(true);
+        try {
+            const response = await api.post('/token/', data);
+            localStorage.setItem('accessToken', response.data.access);
+            localStorage.setItem('refreshToken', response.data.refresh);
+            api.defaults.headers['Authorization'] = `Bearer ${response.data.access}`;
+
+            const userResponse = await api.get('/profile/me/');
+
+            // Adicionamos uma verificação de segurança para o caso de o perfil não existir
+            const userData = {
+                ...userResponse.data,
+                profile: userResponse.data.profile || { role: 'student', stuart_coins_balance: 0 }
+            };
+
+            // Para testar como professor, descomente a linha abaixo:
+            //userData.profile.role = 'teacher';
+
+            setUser(userData);
+
+            if (userData.profile.role === 'teacher') {
+                router.push('/dashboard-professor');
+            } else {
+                router.push('/temas');
+            }
+
+        } catch (error) {
+            console.error('Falha no login', error);
+            logout();
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const logout = () => {
-        localStorage.clear();
         setUser(null);
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        delete api.defaults.headers['Authorization'];
         router.push('/login');
     };
 
-    // 2. Implementar a função para deduzir moedas
-    const deductCoins = (amount: number) => {
-        setUser(currentUser => {
-            if (!currentUser || (currentUser.stuartCoins ?? 0) < amount) {
-                // Se o usuário não existir ou não tiver moedas suficientes, não faz nada.
-                // A verificação principal será feita na página de correção.
-                return currentUser;
-            }
-            // Retorna um novo objeto de usuário com o saldo atualizado
-            return { ...currentUser, stuartCoins: (currentUser.stuartCoins ?? 0) - amount };
-        });
-    };
-
     return (
-        // 3. Passar a função para o provedor
-        <AuthContext.Provider value={{ user, login, logout, deductCoins }}>
+        <AuthContext.Provider value={{ user, isLoading, login, logout, setUser }}>
             {children}
         </AuthContext.Provider>
     );

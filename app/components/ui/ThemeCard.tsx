@@ -1,53 +1,53 @@
-import Image from 'next/image';
-import { Star, ArrowRight, Check } from 'lucide-react';
 import Link from 'next/link';
+import { Clock, ChevronRight } from 'lucide-react';
 
 interface ThemeCardProps {
     id: number;
-    imageUrl: string;
     title: string;
-    status: 'pending' | 'completed';
+    category: string;
+    motivationalText: string;
 }
 
-const ThemeCard = ({ id, imageUrl, title, status }: ThemeCardProps) => {
-    const destinationUrl = status === 'pending' ? `/escrever/${id}` : `/historico/${id}`;
+const categoryColors: { [key: string]: string } = {
+    social: 'bg-brand-pink text-white',
+    politica: 'bg-brand-blue text-white',
+    economia: 'bg-brand-green text-white',
+    'meio ambiente': 'bg-purple-600 text-white',
+    tecnologia: 'bg-orange-600 text-white',
+    educacao: 'bg-yellow-500 text-brand-black',
+    cultura: 'bg-red-600 text-white',
+    default: 'bg-gray-700 text-white',
+};
+
+export default function ThemeCard({ id, title, category, motivationalText }: ThemeCardProps) {
+    const colorClass = categoryColors[category.toLowerCase()] || categoryColors.default;
 
     return (
-        <Link href={destinationUrl} className="block h-full">
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden group transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-full flex flex-col border border-gray-200">
-                <div className="relative">
-                    <Image
-                        src={imageUrl}
-                        alt={title}
-                        width={400}
-                        height={200}
-                        className="w-full h-32 object-cover"
-                    />
-                    <button className="absolute top-3 right-3 p-1.5 bg-white/70 backdrop-blur-sm rounded-full text-gray-500 hover:text-yellow-400 hover:bg-white transition-colors">
-                        <Star size={18} />
-                    </button>
+        <Link href={`/escrever/${id}`} className="group block">
+            <div className="bg-white neo-card p-6 h-full flex flex-col hover:bg-gray-50 transition-all duration-200 transform hover:-translate-y-1">
+                <div className="flex justify-between items-start mb-4">
+                    <span className={`px-3 py-1 text-xs font-black ${colorClass} neo-button`}>
+                        {category.toUpperCase()}
+                    </span>
+                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-brand-pink transition-colors" />
                 </div>
-                <div className="p-4 flex flex-col flex-grow">
 
-                    <h3 className="font-black text-gray-800 mb-2 flex-grow text-lg">{title}</h3>
+                <h3 className="text-xl font-black mb-3 text-brand-black line-clamp-2 flex-grow">
+                    {title}
+                </h3>
 
-                    {/* INÍCIO DA ALTERAÇÃO */}
-                    {status === 'pending' ? (
-                        <div className="flex items-center justify-between text-brand-green font-black group-hover:underline mt-auto">
-                            <span>Escrever Redação</span>
-                            <ArrowRight size={20} />
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-between text-brand-green font-bold mt-auto">
-                            <span>Ver Correção</span>
-                            <Check size={20} />
-                        </div>
-                    )}
-                    {/* FIM DA ALTERAÇÃO */}
+                <p className="text-gray-600 font-sans mb-4 line-clamp-3 text-sm">
+                    {motivationalText}
+                </p>
+
+                <div className="flex justify-between items-center text-sm mt-auto pt-4 border-t-2 border-dashed border-gray-200">
+                    <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-gray-500" />
+                        <span className="font-sans font-semibold text-gray-700">60 min</span>
+                    </div>
+                    <div className="font-black text-brand-blue">ENEM 2023</div>
                 </div>
             </div>
         </Link>
     );
-};
-
-export default ThemeCard;
+}

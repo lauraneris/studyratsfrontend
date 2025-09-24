@@ -1,84 +1,160 @@
-"use client";
+'use client';
 
-import { motion, Variants } from 'framer-motion';
-import CustomSelect from "../../components/ui/CustomSelect";
-import DifficultySlider from "../../components/ui/DifficultySlider";
-import DisciplineSelector from "../../components/ui/DisciplineSelector";
-import ToggleSwitch from "../../components/ui/ToggleSwitch";
-import { Camera } from "lucide-react";
-import ProfileIcon from "@/app/components/ui/ProfileIcon";
-import MascotIntro from '@/app/components/ui/MascotIntro';
-import { useAuth } from '@/app/context/AuthContext';
+import { useState, FormEvent, useMemo, ChangeEvent } from 'react';
+import { BookOpen, Zap, Loader2, Download } from 'lucide-react';
+import ToggleSwitch from '@/app/components/ui/ToggleSwitch';
 
-const titleContainerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: { staggerChildren: 0.08, delayChildren: 0.2 }
-    }
-};
+const allDisciplines = [
+    'Matemática', 'Física', 'Química', 'Biologia',
+    'História', 'Geografia', 'Filosofia', 'Sociologia',
+    'Língua Portuguesa', 'Literatura', 'Inglês'
+];
 
-const letterVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100 } }
-};
+type SelectedDiscipline = { name: string; questions: number };
 
-const SimuladoPage = () => {
-    const { user } = useAuth();
-    const title = "Gerar Simulado Personalizado";
+export default function GerarSimuladoPage() {
+    const [selectedDisciplines, setSelectedDisciplines] = useState<SelectedDiscipline[]>([]);
+    const [difficulty, setDifficulty] = useState<'facil' | 'medio' | 'dificil'>('medio');
+    const [includeGabarito, setIncludeGabarito] = useState(true);
+    const [includeCorrecao, setIncludeCorrecao] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isGenerated, setIsGenerated] = useState(false); // Novo estado para controlar se o simulado foi gerado
+
+    const resetGeneration = () => setIsGenerated(false);
+
+    const toggleDiscipline = (disciplineName: string) => {
+        resetGeneration();
+        const isSelected = selectedDisciplines.some(d => d.name === disciplineName);
+        if (isSelected) {
+            setSelectedDisciplines(prev => prev.filter(d => d.name !== disciplineName));
+        } else {
+            setSelectedDisciplines(prev => [...prev, { name: disciplineName, questions: 5 }]);
+        }
+    };
+
+    const updateQuestionCount = (disciplineName: string, e: ChangeEvent<HTMLInputElement>) => {
+        resetGeneration();
+        let newCount = parseInt(e.target.value, 10);
+        if (isNaN(newCount)) newCount = 1;
+
+        // Garante que o valor está entre 1 e 30
+        newCount = Math.max(1, Math.min(30, newCount));
+
+        setSelectedDisciplines(prev => prev.map(d =>
+            d.name === disciplineName ? { ...d, questions: newCount } : d
+        ));
+    };
+
+    const totalQuestions = useMemo(() => {
+        return selectedDisciplines.reduce((total, d) => total + d.questions, 0);
+    }, [selectedDisciplines]);
+
+    const handleGenerate = (e: FormEvent) => {
+        e.preventDefault();
+        if (selectedDisciplines.length === 0) {
+            alert('Selecione pelo menos uma disciplina!');
+            return;
+        }
+        setIsLoading(true);
+        setIsGenerated(false);
+
+        setTimeout(() => {
+            setIsLoading(false);
+            setIsGenerated(true); // Ativa o botão de download
+            alert(`Simulado de ${totalQuestions} questões gerado com sucesso!`);
+        }, 2500);
+    };
+
+    const handleDownload = () => {
+        if (!isGenerated) return;
+        // Lógica de download (simulada)
+        alert("A iniciar o download do seu simulado em PDF...");
+        console.log("Download solicitado para:", {
+            disciplinas: selectedDisciplines,
+            dificuldade: difficulty,
+            total: totalQuestions,
+            gabarito: includeGabarito,
+            correcao: includeCorrecao
+        });
+    };
 
     return (
-        <div className="bg-gray-50 min-h-screen p-8">
-            <header className="text-center mb-8">
-                <p className="text-sm text-gray-500">Início / Simulado</p>
-                <motion.h1
-                    className="text-4xl md:text-5xl font-black text-brand-pink mt-2"
-                    variants={titleContainerVariants}
-                    initial="hidden"
-                    animate="visible"
-                    aria-label={title}
-                >
-                    {title.split("").map((char, index) => (
-                        <motion.span key={index} variants={letterVariants} style={{ display: 'inline-block' }}>
-                            {char === " " ? "\u00A0" : char}
-                        </motion.span>
-                    ))}
-                </motion.h1>
-            </header>
-
-            <div className="my-10">
-                <MascotIntro
-                    username={user?.username}
-                    message="Vamos montar um simulado focado nos seus objetivos, {name}!"
-                />
-            </div>
-
-            <motion.main
-                className="max-w-xl mx-auto flex flex-col gap-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-            >
-                <CustomSelect label="Prova ou instituição" options={['ENEM', 'UFPR', 'UFSC', 'PUCPR', 'ACAFE', 'Outro']} />
-                <DisciplineSelector />
-                <textarea
-                    placeholder="(Opcional) Digite os assuntos das disciplinas que deseja praticar...."
-                    className="w-full bg-white border-2 border-gray-300 rounded-lg p-4 h-24 focus:outline-none focus:border-brand-blue"
-                />
-                <ToggleSwitch label="Com gabarito e correção?" />
-                <DifficultySlider />
-
-                <div className="flex items-center gap-4 mt-4">
-                    <button className="flex-1 bg-brand-blue text-white font-bold py-3 rounded-lg hover:brightness-110 transition-colors">
-                        Gerar
-                    </button>
-                    <button className="flex-1 bg-brand-green text-white font-bold py-3 rounded-lg hover:brightness-110 transition-colors disabled:bg-gray-300" disabled>
-                        Baixar
-                    </button>
+        <div>
+            <div className="bg-white neo-card p-8">
+                <div className="flex items-center gap-4 mb-6">
+                    <BookOpen className="w-10 h-10 text-brand-green" />
+                    <h1 className="text-3xl font-black text-brand-black">Gerador de Simulados</h1>
                 </div>
-            </motion.main>
+                <p className="font-sans text-gray-600 mb-8">
+                    Crie simulados personalizados para testar os seus conhecimentos. Selecione as disciplinas, o número de questões e comece a praticar!
+                </p>
+
+                <form onSubmit={handleGenerate} className="space-y-8">
+                    {/* 1. Seleção de Disciplinas */}
+                    <div>
+                        <h2 className="text-xl font-black mb-4 text-brand-black">1. SELECIONE AS DISCIPLINAS</h2>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {allDisciplines.map(discipline => (
+                                <button
+                                    type="button" key={discipline} onClick={() => toggleDiscipline(discipline)}
+                                    className={`p-4 neo-button font-black text-sm h-full ${selectedDisciplines.some(d => d.name === discipline) ? 'bg-brand-pink text-white' : 'bg-white text-brand-black hover:bg-gray-100'}`}
+                                >
+                                    {discipline}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 2. Quantidade de Questões por Disciplina */}
+                    {selectedDisciplines.length > 0 && (
+                        <div>
+                            <h2 className="text-xl font-black mb-4 text-brand-black">2. AJUSTE O NÚMERO DE QUESTÕES</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {selectedDisciplines.map(d => (
+                                    <div key={d.name} className="flex items-center justify-between bg-gray-50 p-3 border-3 border-brand-black">
+                                        <label htmlFor={`questions-${d.name}`} className="font-black">{d.name}</label>
+                                        <input
+                                            id={`questions-${d.name}`}
+                                            type="number"
+                                            min="1"
+                                            max="30"
+                                            value={d.questions}
+                                            onChange={(e) => updateQuestionCount(d.name, e)}
+                                            className="w-20 h-10 text-center font-black border-2 border-brand-black"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="mt-4 text-right font-black text-lg">TOTAL DE QUESTÕES: {totalQuestions}</div>
+                        </div>
+                    )}
+
+                    {/* 3. Configurações Adicionais */}
+                    <div>
+                        <h2 className="text-xl font-black mb-4 text-brand-black">3. CONFIGURAÇÕES ADICIONAIS</h2>
+                        <div className="grid md:grid-cols-3 gap-4">
+                            <ToggleSwitch label="Incluir Gabarito" enabled={includeGabarito} onChange={(val) => { setIncludeGabarito(val); resetGeneration(); }} />
+                            <ToggleSwitch label="Incluir Correção" enabled={includeCorrecao} onChange={(val) => { setIncludeCorrecao(val); resetGeneration(); }} />
+                            <select value={difficulty} onChange={(e) => { setDifficulty(e.target.value as any); resetGeneration(); }} className="w-full border-3 border-brand-black h-full px-3 font-black text-brand-black bg-white">
+                                <option value="facil">Nível Fácil</option>
+                                <option value="medio">Nível Médio</option>
+                                <option value="dificil">Nível Difícil</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Botões de Ação */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button type="submit" disabled={isLoading} className="w-full bg-brand-blue text-white neo-button font-black text-xl py-4 hover:bg-brand-pink disabled:opacity-50 flex items-center justify-center gap-3">
+                            {isLoading ? <><Loader2 className="w-6 h-6 animate-spin" /> GERANDO...</> : <><Zap className="w-6 h-6" /> GERAR SIMULADO</>}
+                        </button>
+                        <button type="button" onClick={handleDownload} disabled={!isGenerated || isLoading} className="w-full bg-brand-green text-white neo-button font-black text-xl py-4 hover:bg-brand-pink disabled:opacity-50 disabled:bg-gray-400 disabled:shadow-none disabled:translate-y-[4px] flex items-center justify-center gap-3">
+                            <Download className="w-6 h-6" />
+                            BAIXAR
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
-};
-
-export default SimuladoPage;
+}

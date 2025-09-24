@@ -1,31 +1,21 @@
-"use client";
-
-import { useState } from 'react';
+'use client';
 
 interface ToggleSwitchProps {
     label: string;
+    enabled: boolean;
+    onChange: (enabled: boolean) => void;
 }
 
-const ToggleSwitch = ({ label }: ToggleSwitchProps) => {
-    const [isEnabled, setIsEnabled] = useState(true);
-
+export default function ToggleSwitch({ label, enabled, onChange }: ToggleSwitchProps) {
     return (
-        <div className="flex items-center justify-between bg-white border-2 border-gray-300 rounded-lg p-3">
-            <label htmlFor="toggle" className="font-semibold text-gray-700 cursor-pointer">
-                {label}
-            </label>
-            <div
-                onClick={() => setIsEnabled(!isEnabled)}
-                className={`relative inline-flex items-center h-6 rounded-full w-11 cursor-pointer transition-colors ${isEnabled ? 'bg-brand-blue' : 'bg-gray-300'
-                    }`}
-            >
-                <span
-                    className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${isEnabled ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                />
+        <div
+            onClick={() => onChange(!enabled)}
+            className="flex items-center justify-between cursor-pointer bg-gray-50 p-4 border-3 border-brand-black neo-button"
+        >
+            <span className="font-black text-brand-black">{label}</span>
+            <div className={`w-14 h-8 flex items-center rounded-full p-1 duration-300 ease-in-out ${enabled ? 'bg-brand-green' : 'bg-gray-300'}`}>
+                <div className={`bg-white w-6 h-6 rounded-full shadow-md transform duration-300 ease-in-out ${enabled ? 'translate-x-6' : ''}`} />
             </div>
         </div>
     );
-};
-
-export default ToggleSwitch;
+}

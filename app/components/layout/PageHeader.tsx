@@ -1,4 +1,4 @@
-// app/components/layout/PageHeader.tsx
+'use client';
 import Image from 'next/image';
 
 interface PageHeaderProps {
